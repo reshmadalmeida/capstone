@@ -8,6 +8,7 @@ import CreatePolicyWizard from '../features/policy/CreatePolicyWizard/CreatePoli
 import PoliciesList from '../features/policy/PolicyList';
 import PolicyDetails from '../features/policy/PolicyDetails';
 import { useAuth } from '../hooks/useAuth';
+import UserList from '../features/admin/UserList';
 
 export function AppRoutes() {
   const { user } = useAuth();
@@ -100,7 +101,7 @@ export function AppRoutes() {
           path="/admin/users"
           element={
             <RoleRoute allowed={['admin']}>
-              <div>User Management - Coming Soon</div>
+            <UserList/>
             </RoleRoute>
           }
         />
