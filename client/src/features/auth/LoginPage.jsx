@@ -39,7 +39,7 @@ export default function LoginPage() {
     <Box sx={{ display: 'grid', placeItems: 'center', height: '100dvh' }}>
       <Paper sx={{ p: 4, width: 360 }} component="form" onSubmit={submit}>
         <Typography variant="h5" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-          Insurance Portal
+          Capstone-Insurance Portal
         </Typography>
 
         {error && (
