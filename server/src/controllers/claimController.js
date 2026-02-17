@@ -59,61 +59,75 @@ exports.getClaims = async (req, res) => {
   }
 };
 
+
 exports.updateClaim = async (req, res) => {
   try {
-    const oldValue =  await Claim.findById(req.params.id);
-    console.log(oldValue,"oldValue")
-    const remarks = JSON.parse(oldValue.remarks);
-    const policy = req.body.policyNumber
-      ? await Policy.findOne({ policyNumber: req.body.policyNumber })
-       
-      : await Policy.findById(oldValue.policyNumber);
-    const { status } = req.body;
-    if (status === "IN_REVIEW") {
-      remarks.push({
-        createdAt: new Date(),
-        message: "Claim updated and resubmitted for review.",
-      });
-    } else if (status === "APPROVED") {
-      remarks.push({
-        createdAt: new Date(),
-        message: "Claim approved.",
-      });
-    } else if (status === "REJECTED") {
-      remarks.push({
-        createdAt: new Date(),
-        message: "Claim rejected.",
-      });
-    } else if (status === "SETTLED") {
-      remarks.push({
-        createdAt: new Date(),
-        message: "Claim settled.",
+    const oldValue = await Claim.findById(req.params.id);
+    if (!oldValue) {
+      return res.status(404).json({ message: "Claim not found" });
+    }
+
+    let remarks = [];
+    try {
+      remarks = oldValue.remarks ? JSON.parse(oldValue.remarks) : [];
+      if (!Array.isArray(remarks)) remarks = [];
+    } catch {
+      remarks = [];
+    }
+
+    const policyNumberToUse = req.body.policyNumber || oldValue.policyNumber;
+
+    const policy = await Policy.findOne({
+      policyNumber: policyNumberToUse,
+      status: "ACTIVE", // optional: remove if you want allow inactive policy update
+    });
+
+    if (!policy) {
+      return res.status(404).json({
+        message: `No active policy found for policyNumber: ${policyNumberToUse}`,
       });
     }
+
+    const { status } = req.body;
+
+    const statusMessages = {
+      IN_REVIEW: "Claim updated and resubmitted for review.",
+      APPROVED: "Claim approved.",
+      REJECTED: "Claim rejected.",
+      SETTLED: "Claim settled.",
+    };
+
+    if (status && statusMessages[status]) {
+      remarks.push({ createdAt: new Date(), message: statusMessages[status] });
+    }
+
     const claim = await Claim.findByIdAndUpdate(
-      req.params.policyNumber,
+      req.params.id, // ✅ correct
       {
         ...req.body,
-        policyNumber: policy.policyNumber,
+        policyNumber: policy.policyNumber, // ✅ always exists now
         remarks: JSON.stringify(remarks),
       },
-      {
-        new: true,
-      },
+      { new: true }
     );
-    console.log(claim,"updated claim")
+
+    if (!claim) {
+      return res.status(404).json({ message: "Claim not found" });
+    }
+
     createAuditLog({
       entityType: "CLAIM",
-      entityId: claim.policyNumber,
+      entityId: claim._id,
       action: "UPDATE",
       oldValue,
       newValue: claim,
-      performedBy: req.user._id,
+      performedBy: req.user?._id,
       ipAddress: await getClientIp(req),
     });
-    res.json(claim);
+
+    return res.json(claim);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
