@@ -1,33 +1,28 @@
-// models/audit-log.model.js
-const mongoose = require('mongoose');
-const { Schema, model } = mongoose;
+const mongoose = require("mongoose");
 
-const ENTITY_TYPES = ["POLICY", "CLAIM", "TREATY", "USER"];
-const ACTIONS = ["CREATE", "UPDATE", "DELETE", "APPROVE"];
+const { Schema } = mongoose;
 
-const AuditLogSchema = new Schema({
+const AuditLogSchema = new Schema(
+  {
     entityType: {
       type: String,
-      enum: ENTITY_TYPES,
       required: true,
-     
+      enum: ["POLICY", "CLAIM", "REINSURER", "TREATY", "USER"],
     },
 
     entityId: {
       type: Schema.Types.ObjectId,
       required: true,
-     
     },
 
     action: {
       type: String,
-      enum: ACTIONS,
       required: true,
-     
+      enum: ["CREATE", "UPDATE", "DELETE", "APPROVE"],
     },
 
     oldValue: {
-      type: Schema.Types.Mixed, 
+      type: Schema.Types.Mixed,
       default: null,
     },
 
@@ -40,24 +35,22 @@ const AuditLogSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-     
     },
 
     performedAt: {
       type: Date,
-      default: Date.now,
-     
+      default: new Date(),
     },
 
     ipAddress: {
       type: String,
-      trim: true
-    }
+      trim: true,
+    },
   },
   {
     timestamps: false,
     collection: "audit_logs",
-  }
+  },
 );
 
-module.exports = model('AuditLog', AuditLogSchema);
+module.exports = mongoose.model("AuditLog", AuditLogSchema);

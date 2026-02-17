@@ -3,12 +3,16 @@ import ProtectedRoute from '../routes/ProtectedRoute';
 import RoleRoute from './RoleRoute';
 import AppShell from '../layout/AppShell';
 import LoginPage from '../features/auth/LoginPage';
-import Dashboard from '../features/auth/Dashboard';
+// import AnalyticsDashboard from '../features/dashboard/AnalyticsDashboard';
+import Dashboard from '../features/dashboard/Dashboard';
 import CreatePolicyWizard from '../features/policy/CreatePolicyWizard/CreatePolicyWizard';
 import PoliciesList from '../features/policy/PolicyList';
 import PolicyDetails from '../features/policy/PolicyDetails';
 import { useAuth } from '../hooks/useAuth';
 import UserList from '../features/admin/UserList';
+import ReinsurerList from '../features/reinsurer/ReinsurerList';
+import TreatyList from '../features/treaty/TreatyList';
+import RiskAllocationView from '../features/treaty/RiskAllocationView';
 
 export function AppRoutes() {
   const { user } = useAuth();
@@ -31,8 +35,22 @@ export function AppRoutes() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
 
-        {/* Dashboard - Accessible to all logged-in users */}
-        <Route path="/dashboard" element={<Dashboard />} />
+        {/* Dashboard - Analytics for all roles */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "ADMIN",
+                "UNDERWRITER",
+                "CLAIMS_ADJUSTER",
+                "REINSURANCE_ANALYST",
+              ]}
+            ><Dashboard/>
+              {/* <AnalyticsDashboard /> */}
+            </ProtectedRoute>
+          }
+        />
 
         {/* Policy Management - Underwriter & Admin */}
         <Route
@@ -74,29 +92,31 @@ export function AppRoutes() {
         <Route
           path="/reinsurance"
           element={
-            <RoleRoute allowed={['admin', 'reinsurance_manager']}>
-              <div>Reinsurance Module - Coming Soon</div>
+            <RoleRoute allowed={['admin', 'reinsurance_analyst']}>
+                <ReinsurerList/>
             </RoleRoute>
           }
         />
+        {/* FR-7: Treaty Management with Auto-Allocation Rules */}
         <Route
           path="/reinsurance/treaties"
           element={
-            <RoleRoute allowed={['admin', 'reinsurance_manager']}>
-              <div>Treaties Management - Coming Soon</div>
+            <RoleRoute allowed={['admin', 'reinsurance_analyst']}>
+              <TreatyList />
+            </RoleRoute>
+          }
+        />
+        {/* FR-7, FR-8, FR-9: Risk Allocation View - Auto Allocate, Validate Limits, Calculate Exposure */}
+        <Route
+          path="/reinsurance/allocations"
+          element={
+            <RoleRoute allowed={['admin', 'reinsurance_analyst', 'underwriter']}>
+              <RiskAllocationView />
             </RoleRoute>
           }
         />
 
-        {/* Admin Management - Admin Role Only */}
-        <Route
-          path="/admin"
-          element={
-            <RoleRoute allowed={['admin']}>
-              <div>Admin Dashboard - Coming Soon</div>
-            </RoleRoute>
-          }
-        />
+        
         <Route
           path="/admin/users"
           element={

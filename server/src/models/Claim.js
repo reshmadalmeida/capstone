@@ -1,76 +1,67 @@
-const mongoose = require('mongoose');
-const CLAIM_STATUSES = ["SUBMITTED", "IN_REVIEW", "APPROVED", "REJECTED", "SETTLED"];
+const mongoose = require("mongoose");
+
 const { Schema } = mongoose;
 
-const claimsSchema = new mongoose.Schema({
-    _id: ObjectId,
+const ClaimSchema = new Schema(
+  {
     claimNumber: {
-        type: String,
-        unique: true,
-        index: true,
-        // If you plan to auto-generate, keep required: false and fill in a pre-validate hook
-        required: true,
-        immutable: true,
-        trim: true
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      uppercase: true,
     },
 
     policyId: {
-        type: Schema.Types.ObjectId,
-        ref: "Policy",
-        required: true,
-        index: true
+      type: Schema.Types.ObjectId,
+      ref: "Policy",
+      required: true,
     },
+
     claimAmount: {
-        type: Number,
-        required: true,
-        min: [0, "claimAmount cannot be negative"]
+      type: Number,
+      required: true,
+      min: 0,
     },
 
     approvedAmount: {
-        type: Number,
-        min: [0, "approvedAmount cannot be negative"],
-        //check this 
-        validate: {
-            validator: function (v) {
-                // allow undefined; if present, must be <= claimAmount
-                if (v == null) return true;
-                if (typeof this.claimAmount !== 'number') return true;
-                return v <= this.claimAmount;
-            },
-            message: "approvedAmount cannot exceed claimAmount"
-        }
+      type: Number,
+      min: 0,
+      default: 0,
     },
+
     status: {
-        type: String, enums: CLAIM_STATUSES, required: true, default: "SUBMITTED",
-        index: true
+      type: String,
+      enum: ["IN_REVIEW", "APPROVED", "REJECTED", "SETTLED"],
+      default: "IN_REVIEW",
     },
+
     incidentDate: {
-        type: Date,
-        required: true
+      type: Date,
+      required: true,
     },
+
     reportedDate: {
-        type: Date,
-        required: true,
-        validate: {
-            validator: function (v) {
-                if (!v || !this.incidentDate) return true;
-                return v >= this.incidentDate;
-            },
-            message: "reportedDate must be on or after incidentDate"
-        }
+      type: Date,
+      required: true,
+      default: new Date(),
     },
 
     handledBy: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        index: true
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
     },
-    remarks: String,
-    createdAt: Date,
-    updatedAt: Date
-}, {
-    versionKey: false
-})
-module.exports = mongoose.model("Claim", claimsSchema)
 
+    remarks: {
+      type: String,
+      trim: true,
+    },
+  },
+  {
+    timestamps: true,
+    collection: "claims",
+  },
+);
 
+module.exports = mongoose.model("Claim", ClaimSchema);

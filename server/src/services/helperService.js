@@ -1,6 +1,6 @@
 const Policy = require("../models/Policy");
-// const Treaty = require("../models/Treaty");
-// const RiskAllocation = require("../models/RiskAllocation");
+const Treaty = require("../models/Treaty");
+const RiskAllocation = require("../models/RiskAllocation");
 const AuditLog = require("../models/AuditLog");
 
 exports.getTotalExposure = async () => {

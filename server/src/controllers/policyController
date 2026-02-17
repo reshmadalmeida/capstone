@@ -1,6 +1,6 @@
 const Policy = require("../models/Policy");
 const { getClientIp, createAuditLog } = require("../services/helperService");
-// const { reinsuranceEngine } = require("../services/reinsuranceEngine");
+const { reinsuranceEngine } = require("../services/reinsuranceEngine");
 
 const parseRemarks = (remarks) => {
   try {
@@ -87,9 +87,7 @@ exports.getPolicies = async (req, res) => {
 
 exports.getPolicyById = async (req, res) => {
   try {
-    
-    const id = String(req.params.id || '').replace(/^:/, ''); // in case a leading ':' slips in
-    const policy =await Policy.findOne({ policyNumber: id });
+    const policy = await Policy.findById(req.params.id);
     if (!policy) {
       return res.status(404).json({ message: "Policy not found" });
     }

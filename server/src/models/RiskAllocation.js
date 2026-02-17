@@ -1,79 +1,69 @@
-// models/risk-allocation.model.js
-const mongoose = require('mongoose');
-const { Schema, model } = mongoose;
+const mongoose = require("mongoose");
 
-const AllocationSubSchema = new Schema(
+const { Schema } = mongoose;
+
+// Subdocument schema for each allocation entry
+const AllocationSchema = new Schema(
   {
     reinsurerId: {
       type: Schema.Types.ObjectId,
       ref: "Reinsurer",
-      required: true
+      required: true,
     },
     treatyId: {
       type: Schema.Types.ObjectId,
       ref: "Treaty",
-      required: true
+      required: true,
     },
     allocatedAmount: {
       type: Number,
       required: true,
-      min: [0, "allocatedAmount cannot be negative"]
+      min: 0,
     },
     allocatedPercentage: {
       type: Number,
       required: true,
-      min: [0, "allocatedPercentage cannot be negative"],
-      max: [100, "allocatedPercentage cannot exceed 100"]
-    }
+      min: 0,
+      max: 100,
+    },
   },
-  { _id: false }
+  { _id: false },
 );
 
-const RiskAllocationSchema = new Schema({
-    _id: ObjectId,
+const RiskAllocationSchema = new Schema(
+  {
     policyId: {
       type: Schema.Types.ObjectId,
       ref: "Policy",
       required: true,
-      index: true
     },
 
     allocations: {
-      type: [AllocationSubSchema],
-      validate: {
-        validator: function (arr) {
-          if (!Array.isArray(arr) || arr.length === 0) return true; // allow empty if fully retained
-          // optional: check percentages sum <= 100
-          const totalPct = arr.reduce((s, a) => s + (a.allocatedPercentage || 0), 0);
-          return totalPct <= 100 + 1e-9; // tolerance
-        },
-        message: "Total allocatedPercentage across allocations must be ≤ 100"
-      }
+      type: [AllocationSchema],
+      default: [],
     },
 
     retainedAmount: {
       type: Number,
       required: true,
-      min: [0, "retainedAmount cannot be negative"]
+      min: 0,
     },
 
     calculatedAt: {
       type: Date,
-      default: Date.now,
-      index: true
+      default: new Date(),
     },
 
     calculatedBy: {
       type: Schema.Types.ObjectId,
-      ref: "User"
-    }
+      ref: "User",
+      required: true,
+    },
   },
   {
-    timestamps: true
-  }
+    timestamps: true,
+    collection: "risk_allocations",
+  },
 );
 
-// Helpful for history queries per policy
-RiskAllocationSchema.index({ policyId: 1, calculatedAt: -1 });
-
-module.exports = model('RiskAllocation', RiskAllocationSchema);
+module.exports = mongoose.model("RiskAllocation", RiskAllocationSchema);

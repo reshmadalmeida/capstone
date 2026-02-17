@@ -1,65 +1,57 @@
-// models/reinsurer.model.js
-const mongoose = require('mongoose');
-const { Schema, model } = mongoose;
+const mongoose = require("mongoose");
 
-const RATINGS = ["AAA", "AA", "A", "BBB"];
-const STATUSES = ["ACTIVE", "INACTIVE"];
+const { Schema } = mongoose;
 
-const ReinsurerSchema = new Schema({
-    _id: ObjectId,
+const ReinsurerSchema = new Schema(
+  {
     name: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
 
     code: {
       type: String,
       required: true,
       unique: true,
-      index: true,
       uppercase: true,
-      trim: true
+      trim: true,
     },
 
     country: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
 
     rating: {
       type: String,
-      enum: RATINGS,
-      required: true
+      enum: ["AAA", "AA", "A", "BBB"],
+      required: true,
     },
 
     contactEmail: {
       type: String,
-      trim: true,
+      required: true,
       lowercase: true,
-      validate: {
-        validator: function (v) {
-          if (!v) return true;
-          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-        },
-        message: "Invalid contactEmail format"
-      }
+      trim: true,
     },
 
     status: {
       type: String,
-      enum: STATUSES,
+      enum: ["ACTIVE", "INACTIVE"],
       default: "ACTIVE",
-      index: true
-    }
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
-    timestamps: true
-  }
+    timestamps: true,
+    collection: "reinsurers",
+  },
 );
 
-// Helpful indexes
-ReinsurerSchema.index({ rating: 1, status: 1 });
-
-module.exports = model('Reinsurer', ReinsurerSchema);
+module.exports = mongoose.model("Reinsurer", ReinsurerSchema);

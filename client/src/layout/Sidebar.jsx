@@ -30,7 +30,7 @@ export default function Sidebar() {
       label: 'Dashboard',
       path: '/dashboard',
     //   icon: <DashboardIcon />,
-      roles: ['underwriter', 'admin', 'claims_adjuster', 'reinsurance_manager']
+      roles: ['underwriter', 'admin', 'claims_adjuster', 'reinsurance_analyst']
     },
     {
       label: 'Policies',
@@ -48,7 +48,7 @@ export default function Sidebar() {
       label: 'Reinsurance',
       path: '/reinsurance',
     //   icon: <ReinsuranceIcon />,
-      roles: ['reinsurance_manager', 'admin'],
+      roles: ['reinsurance_analyst', 'admin'],
       submenu: [
         { label: 'Treaties', path: '/reinsurance/treaties' }
       ]
