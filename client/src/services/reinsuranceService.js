@@ -16,15 +16,15 @@ export const reinsuranceService = {
 	deleteReinsurer: (id) => api.delete(`/reinsurers/${id}`).then(r => r.data),
 
 	// Risk Allocations
-	getRiskAllocations: (policyId) => api.get(`/risk-allocations/${policyId}`).then(r => r.data),
+	getRiskAllocations: (policyNumber) => api.get(`/risk-allocations/${policyNumber}`).then(r => r.data),
 	listAllocations: () => api.get('/risk-allocations').then(r => r.data),
 	
 	// FR-7: Automatic risk allocation using treaty rules
-	allocateRisk: (policyId) => api.post(`/risk-allocations/allocate/${policyId}`).then(r => r.data),
+	allocateRisk: (policyNumber) => api.post(`/risk-allocations/allocate/${policyNumber}`).then(r => r.data),
 	
 	// FR-8 & FR-9: Enforce limits and calculate exposures
 	validateAllocation: (allocationData) => api.post('/risk-allocations/validate', allocationData).then(r => r.data),
-	calculateExposure: (policyId) => api.post(`/risk-allocations/calculate-exposure/${policyId}`).then(r => r.data),
+	calculateExposure: (policyNumber) => api.post(`/risk-allocations/calculate-exposure/${policyNumber}`).then(r => r.data),
 
 	// Treaty Configs
 	listTreatyConfigs: () => api.get('/treaties/configs').then(r => r.data),

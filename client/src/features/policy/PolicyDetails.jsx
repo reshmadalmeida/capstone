@@ -16,6 +16,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { policyService } from '../../services/policyService';
 import { usePermissions } from '../../hooks/usePermissions';
 import PolicyApprovalPanel from './PolicyApprovalPanel';
+import { Button } from '@mui/material';
 import { POLICY_STATUS } from '../../app/constants';
 
 export default function PolicyDetails() {
@@ -112,6 +113,29 @@ export default function PolicyDetails() {
   }
 
   const isAdmin = can('admin');
+  const isUnderwriter = can('underwriter');
+
+  // Approve handler for underwriter
+  const [approveLoading, setApproveLoading] = useState(false);
+  const [approveMsg, setApproveMsg] = useState(null);
+  const [exposure, setExposure] = useState(null);
+
+  const handleUnderwriterApprove = async () => {
+    setApproveLoading(true);
+    setApproveMsg(null);
+    try {
+      const response = await policyService.approve(policy.id);
+      setPolicy({ ...policy, ...response });
+      setExposure(response.allocation || null);
+      setApproveMsg({ type: 'success', text: 'Policy approved and risk calculated.' });
+      // Refresh audit log
+      policyService.getAuditLog(id).then(data => setAuditLog(data || []));
+    } catch (e) {
+      setApproveMsg({ type: 'error', text: e?.response?.data?.message || 'Approval failed' });
+    } finally {
+      setApproveLoading(false);
+    }
+  };
 
   return (
     <Stack spacing={3}>
@@ -232,6 +256,50 @@ export default function PolicyDetails() {
           onStatusChange={handleStatusChange}
           isAdmin={isAdmin}
         />
+      )}
+
+      {/* Approve button for Underwriter if policy is DRAFT */}
+      {isUnderwriter && policy.status === 'DRAFT' && (
+        <Box>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleUnderwriterApprove}
+            disabled={approveLoading}
+            sx={{ mb: 2 }}
+          >
+            {approveLoading ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
+            Approve & Calculate Risk
+          </Button>
+          {approveMsg && (
+            <Alert severity={approveMsg.type} sx={{ mt: 1 }}>{approveMsg.text}</Alert>
+          )}
+        </Box>
+      )}
+
+      {/* Show exposure/retention after approval */}
+      {exposure && (
+        <Paper sx={{ p: 3, backgroundColor: '#f5f5f5' }}>
+          <Typography variant="h6" gutterBottom>Exposure & Retention</Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}><Typography>Retained Amount: {formatCurrency(exposure.retainedAmount)}</Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography>Ceded Amount: {formatCurrency(exposure.cededAmount)}</Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography>Retained %: {exposure.retainedPercentage}%</Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography>Ceded %: {exposure.cededPercentage}%</Typography></Grid>
+          </Grid>
+          {Array.isArray(exposure.allocations) && exposure.allocations.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2">Allocations</Typography>
+              <ul style={{ margin: 0, paddingLeft: 20 }}>
+                {exposure.allocations.map((a, idx) => (
+                  <li key={idx}>
+                    {a.reinsurer} ({a.treaty}): {formatCurrency(a.allocatedAmount)} ({a.allocatedPercentage}%)
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
+        </Paper>
       )}
 
       {/* Audit Log */}

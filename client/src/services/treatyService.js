@@ -9,7 +9,7 @@ export const treatyService = {
   delete: (id) => api.delete(`/treaties/${id}`).then(r => r.data),
 
   // Risk Allocations
-  getRiskAllocations: (policyId) => api.get(`/risk-allocations/${policyId}`).then(r => r.data),
+  getRiskAllocations: (policyNumber) => api.get(`/risk-allocations/${policyNumber}`).then(r => r.data),
   listAllocations: () => api.get('/risk-allocations').then(r => r.data),
 
   // Treaty Configs

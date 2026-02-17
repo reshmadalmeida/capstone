@@ -3,7 +3,7 @@ import ProtectedRoute from '../routes/ProtectedRoute';
 import RoleRoute from './RoleRoute';
 import AppShell from '../layout/AppShell';
 import LoginPage from '../features/auth/LoginPage';
-// import AnalyticsDashboard from '../features/dashboard/AnalyticsDashboard';
+//  import AnalyticsDashboard from '../features/dashboard/AnalyticsDashboard';
 import Dashboard from '../features/dashboard/Dashboard';
 import CreatePolicyWizard from '../features/policy/CreatePolicyWizard/CreatePolicyWizard';
 import PoliciesList from '../features/policy/PolicyList';
@@ -13,6 +13,7 @@ import UserList from '../features/admin/UserList';
 import ReinsurerList from '../features/reinsurer/ReinsurerList';
 import TreatyList from '../features/treaty/TreatyList';
 import RiskAllocationView from '../features/treaty/RiskAllocationView';
+import ClaimsList from '../features/claims/ClaimsList';
 
 export function AppRoutes() {
   const { user } = useAuth();
@@ -46,7 +47,8 @@ export function AppRoutes() {
                 "CLAIMS_ADJUSTER",
                 "REINSURANCE_ANALYST",
               ]}
-            ><Dashboard/>
+            >
+              <Dashboard />
               {/* <AnalyticsDashboard /> */}
             </ProtectedRoute>
           }
@@ -83,7 +85,7 @@ export function AppRoutes() {
           path="/claims"
           element={
             <RoleRoute allowed={['admin', 'claims_adjuster']}>
-              <div>Claims Module - Coming Soon</div>
+             <ClaimsList/>
             </RoleRoute>
           }
         />

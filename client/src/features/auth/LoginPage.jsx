@@ -82,6 +82,10 @@ export default function LoginPage() {
 
         <Typography variant="caption" sx={{ mt: 2, display: 'block', textAlign: 'center', color: 'text.secondary' }}>
           Please use valid credentials for your role
+        claimadjuster_1@capstone.com | 12345
+        admin@capstone.com | 12345
+        rm@capstone.com | 12345
+        underwriter1212@capstone.com | Ul12345
         </Typography>
       </Paper>
     </Box>

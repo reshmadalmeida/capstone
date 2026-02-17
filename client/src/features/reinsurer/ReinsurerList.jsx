@@ -1,20 +1,94 @@
-
-
-import { useEffect, useState } from "react";
-import Loader from "../../shared/Loader";
+import { useEffect, useMemo, useState } from "react";
 import ReinsurerForm from "./ReinsurerForm";
-import { useAuth } from "../../hooks/useAuth";
-// Ensure the correct import path for isAllowed utility
-import { isAllowed } from "../../common/utils";
-import AppShell from "../../layout/AppShell";
-import { Box, Button, Typography, Paper, IconButton, Chip, TableContainer, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import ConfirmDialog from "../../shared/ConfirmDialog";
-import reinsuranceService from "../../services/reinsuranceService";
-import { REINSURER_ANALYST_LINKS } from "../../app/constants";
+import { useAuth } from "../../hooks/useAuth";
+import { isAllowed } from "../../common/utils";
 
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Stack,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Alert,
+  Divider,
+  TextField,
+  InputAdornment,
+} from "@mui/material";
+
+import AddIcon from "@mui/icons-material/Add";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import SearchIcon from "@mui/icons-material/Search";
+
+// ✅ Dummy data
+const DUMMY_REINSURERS = [
+  {
+    _id: "r1",
+    name: "Swiss Re",
+    code: "R001",
+    country: "Switzerland",
+    rating: "AAA",
+    contactEmail: "contact@swissre.com",
+    status: "ACTIVE",
+    isDeleted: false,
+  },
+  {
+    _id: "r2",
+    name: "Munich Re",
+    code: "R002",
+    country: "Germany",
+    rating: "AA",
+    contactEmail: "contact@munichre.com",
+    status: "ACTIVE",
+    isDeleted: false,
+  },
+  {
+    _id: "r3",
+    name: "Hannover Re",
+    code: "R003",
+    country: "Germany",
+    rating: "A",
+    contactEmail: "contact@hannoverre.com",
+    status: "INACTIVE",
+    isDeleted: false,
+  },
+];
+
+function statusChipProps(status) {
+  switch (status) {
+    case "ACTIVE":
+      return { label: "ACTIVE", color: "success", variant: "outlined" };
+    case "INACTIVE":
+      return { label: "INACTIVE", color: "default", variant: "outlined" };
+    default:
+      return { label: status || "—", color: "default", variant: "outlined" };
+  }
+}
+
+function ratingChipProps(rating) {
+  switch (rating) {
+    case "AAA":
+      return { label: "AAA", color: "success", variant: "outlined" };
+    case "AA":
+      return { label: "AA", color: "primary", variant: "outlined" };
+    case "A":
+      return { label: "A", color: "warning", variant: "outlined" };
+    case "BBB":
+      return { label: "BBB", color: "default", variant: "outlined" };
+    default:
+      return { label: rating || "—", color: "default", variant: "outlined" };
+  }
+}
 
 export default function ReinsurerList() {
   const [reinsurers, setReinsurers] = useState([]);
@@ -24,17 +98,21 @@ export default function ReinsurerList() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [search, setSearch] = useState("");
 
   const { loggedInUser } = useAuth();
+
   const isCreateAllowed = isAllowed(loggedInUser?.user?.permissions, "CREATE");
   const isEditAllowed = isAllowed(loggedInUser?.user?.permissions, "UPDATE");
   const isDeleteAllowed = isAllowed(loggedInUser?.user?.permissions, "DELETE");
 
+  // ✅ Dummy fetch
   const fetchReinsurers = async () => {
     try {
       setLoading(true);
-      const res = await reinsuranceService.getReinsurers();
-      setReinsurers(res);
+      await new Promise((r) => setTimeout(r, 300));
+      setReinsurers(DUMMY_REINSURERS);
     } catch {
       setError("Failed to fetch reinsurers.");
     } finally {
@@ -61,16 +139,15 @@ export default function ReinsurerList() {
     setShowDeleteConfirmModal(true);
   };
 
-  const confirmDelete = async () => {
-    try {
-      await reinsuranceService.deleteReinsurer(itemToDelete._id);
-      fetchReinsurers();
-    } catch (error) {
-      setError(error.message || "Failed to delete reinsurer.");
-    } finally {
-      setShowDeleteConfirmModal(false);
-      setItemToDelete(null);
-    }
+  // ✅ Soft delete
+  const confirmDelete = () => {
+    setReinsurers((prev) =>
+      prev.map((r) =>
+        r._id === itemToDelete._id ? { ...r, isDeleted: true } : r
+      )
+    );
+    setShowDeleteConfirmModal(false);
+    setItemToDelete(null);
   };
 
   const cancelDelete = () => {
@@ -84,109 +161,121 @@ export default function ReinsurerList() {
     if (reload) fetchReinsurers();
   };
 
-  if (loading) return <Loader />;
-  if (error) return (
-    <Box p={4} textAlign="center">
-      <Typography color="error">{error}</Typography>
-    </Box>
-  );
+  // ✅ filter + search
+  const visibleReinsurers = useMemo(() => {
+    const q = search.toLowerCase();
+    return reinsurers
+      .filter((r) => !r.isDeleted)
+      .filter((r) =>
+        [r.name, r.code, r.country, r.contactEmail, r.rating, r.status]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      );
+  }, [reinsurers, search]);
+
+  if (loading) return <Typography sx={{ p: 3 }}>Loading...</Typography>;
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
-    <AppShell links={REINSURER_ANALYST_LINKS}>
-      <Box sx={{ p: 4 }}>
-        <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      {!!alertMessage && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {alertMessage}
+        </Alert>
+      )}
+
+      <Paper
+        sx={{
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        {/* Header */}
+        <Box sx={{ px: 3, py: 2 }}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <Box>
-              <Typography variant="h5" fontWeight={600} gutterBottom>Reinsurers</Typography>
+              <Typography variant="h6" fontWeight={700}>
+                Reinsurers
+              </Typography>
               <Typography variant="body2" color="text.secondary">
-                Manage reinsurer profiles and ratings
+                Manage reinsurer profiles
               </Typography>
             </Box>
-            {isCreateAllowed && (
-              <Button variant="contained" color="success" startIcon={<AddIcon />} onClick={onCreate}>
-                Create Reinsurer
-              </Button>
-            )}
-          </Box>
-        </Paper>
-        <Paper elevation={1} sx={{ p: 2 }}>
-          <TableContainer>
-            <Table aria-label="reinsurers table">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Code</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Country</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Rating</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+
+            <Stack direction="row" spacing={1}>
+            
+
+              
+
+              {isCreateAllowed && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={onCreate}
+                >
+                  Create
+                </Button>
+              )}
+            </Stack>
+          </Stack>
+        </Box>
+
+        <Divider />
+
+        {/* Table */}
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Code</TableCell>
+                <TableCell>Name</TableCell>
+                <TableCell>Country</TableCell>
+                <TableCell>Rating</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Status</TableCell>
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {visibleReinsurers.map((r) => (
+                <TableRow key={r._id} hover>
+                  <TableCell>{r.code}</TableCell>
+                  <TableCell>{r.name}</TableCell>
+                  <TableCell>{r.country}</TableCell>
+
+                  <TableCell>
+                    <Chip size="small" {...ratingChipProps(r.rating)} />
+                  </TableCell>
+
+                  <TableCell>{r.contactEmail}</TableCell>
+
+                  <TableCell>
+                    <Chip size="small" {...statusChipProps(r.status)} />
+                  </TableCell>
+
+                 
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {reinsurers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                      <Typography color="textSecondary">No reinsurers found</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  reinsurers.map((reinsurer) => (
-                    <TableRow key={reinsurer._id} sx={{ '&:hover': { backgroundColor: '#fafafa' } }}>
-                      <TableCell>{reinsurer.code}</TableCell>
-                      <TableCell>{reinsurer.name}</TableCell>
-                      <TableCell>{reinsurer.country}</TableCell>
-                      <TableCell>
-                        <Chip label={reinsurer.rating} color="default" size="small" />
-                      </TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={reinsurer.status} 
-                          color={reinsurer.status === 'ACTIVE' ? 'success' : reinsurer.status === 'INACTIVE' ? 'default' : 'warning'} 
-                          size="small" 
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        {isEditAllowed && (
-                          <IconButton 
-                            color="success" 
-                            onClick={() => onEdit(reinsurer)} 
-                            title="Edit"
-                            size="small"
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        )}
-                        {isDeleteAllowed && (
-                          <IconButton 
-                            color="error" 
-                            onClick={() => onDeleteClick(reinsurer)} 
-                            title="Delete"
-                            size="small"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-      </Box>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      {/* Modal */}
       <ReinsurerForm
         onClose={onModalClose}
         showModal={showModal}
         reinsurerData={selectedItem}
       />
-      <ConfirmDialog
-        showModal={showDeleteConfirmModal}
-        title="Delete Reinsurer"
-        message={`Are you sure you want to delete this reinsurer?`}
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
-      />
-    </AppShell>
+
+     
+    </Box>
   );
 }

@@ -7,19 +7,19 @@ const { authorize } = require("../middleware/roleGuard");
 router.post(
   "/create",
   protect,
-  authorize("REINSURANCE_ANALYST"),
+  authorize("REINSURANCE_ANALYST", "ADMIN"),
   treatyController.createTreaty,
 );
 router.get(
   "/",
   protect,
-  authorize("REINSURANCE_ANALYST"),
+  authorize("REINSURANCE_ANALYST", "ADMIN"),
   treatyController.getTreaties,
 );
 router.put(
   "/:id",
   protect,
-  authorize("REINSURANCE_ANALYST"),
+  authorize("REINSURANCE_ANALYST", "ADMIN"),
   treatyController.updateTreaty,
 );
 

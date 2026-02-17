@@ -14,16 +14,17 @@ exports.createClaim = async (req, res) => {
       nextClaimNumber = `C${String(incremented).padStart(3, "0")}`;
     }
     const policy = await Policy.findOne({
-      policyNumber: req.body.policyId,
+      policyNumber: req.body.policyNumber,
       status: "ACTIVE",
     });
     if (!policy) {
       return res.json({ message: "No active policy found" });
     }
+    console.log(req.body, policy.policyNumber,"req.body")
     const claim = await Claim.create({
       ...req.body,
       claimNumber: nextClaimNumber,
-      policyId: policy._id,
+      policyNumber: policy.policyNumber,
       handledBy: req.user._id,
       remarks: JSON.stringify([
         {
@@ -32,6 +33,7 @@ exports.createClaim = async (req, res) => {
         },
       ]),
     });
+    console.log(claim,"claim")
     createAuditLog({
       entityType: "CLAIM",
       entityId: claim._id,
@@ -49,7 +51,7 @@ exports.createClaim = async (req, res) => {
 exports.getClaims = async (req, res) => {
   try {
     const claims = await Claim.find()
-      .populate("policyId")
+      .populate("policyNumber")
       .populate("handledBy", "username");
     res.json(claims);
   } catch (error) {
@@ -59,13 +61,13 @@ exports.getClaims = async (req, res) => {
 
 exports.updateClaim = async (req, res) => {
   try {
-    const oldValue = await Claim.findById(req.params.id);
+    const oldValue =  await Claim.findById(req.params.id);
+    console.log(oldValue,"oldValue")
     const remarks = JSON.parse(oldValue.remarks);
-    const policy = req.body.policyId
-      ? await Policy.findOne({
-          policyNumber: req.body.policyId,
-        })
-      : await Policy.findById(oldValue.policyId);
+    const policy = req.body.policyNumber
+      ? await Policy.findOne({ policyNumber: req.body.policyNumber })
+       
+      : await Policy.findById(oldValue.policyNumber);
     const { status } = req.body;
     if (status === "IN_REVIEW") {
       remarks.push({
@@ -89,19 +91,20 @@ exports.updateClaim = async (req, res) => {
       });
     }
     const claim = await Claim.findByIdAndUpdate(
-      req.params.id,
+      req.params.policyNumber,
       {
         ...req.body,
-        policyId: policy._id,
+        policyNumber: policy.policyNumber,
         remarks: JSON.stringify(remarks),
       },
       {
         new: true,
       },
     );
+    console.log(claim,"updated claim")
     createAuditLog({
-      entityType: "POLICY",
-      entityId: claim._id,
+      entityType: "CLAIM",
+      entityId: claim.policyNumber,
       action: "UPDATE",
       oldValue,
       newValue: claim,

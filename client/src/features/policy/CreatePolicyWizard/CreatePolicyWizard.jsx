@@ -10,6 +10,7 @@ import { STEPS, POLICY_STATUS } from '../../../app/constants';
 import PolicyStepGeneral from './PolicyStepGeneral';
 import PolicyStepCoverage from './PolicyStepCoverage';
 import PolicyStepReview from './PolicyStepReview';
+import api from '../../../services/apiClient';
 
 export default function CreatePolicyWizard({
   initialValues = {
@@ -73,22 +74,44 @@ export default function CreatePolicyWizard({
   const back = () => setActive((s) => Math.max(s - 1, 0));
 
   // ---------- Calculate Exposure ----------
-  const calculateExposure = async () => {
-    try {
-      const payload = {
-        sumInsured: Number(values.sumInsured),
-        retentionLimit: Number(values.retentionLimit),
-        lineOfBusiness: values.lineOfBusiness,
-        premium: Number(values.premium),
-      };
-      const result = await policyService.calculateExposure(payload);
-      setCalculatedValues(result);
-      return result;
-    } catch (e) {
-      console.error('Exposure calculation error:', e);
-      return {};
-    }
-  };
+//  const calculateExposure = async () => {
+//   try {
+//     const sumInsured = Number(values.sumInsured || 0);
+//     const retentionLimit = Number(values.retentionLimit || 0);
+
+//     const cededAmount = Math.max(0, sumInsured - retentionLimit);
+//     const retainedAmount = Math.min(sumInsured, retentionLimit);
+
+//     const result = { sumInsured, retentionLimit, cededAmount, retainedAmount };
+//     setCalculatedValues(result);
+//     return result;
+//   } catch (e) {
+//     console.error("Exposure calculation error:", e);
+//     return {};
+//   }
+// };
+const calculateExposure = async (policyNumber) => {
+  try {
+    const payload = {
+      sumInsured: Number(values.sumInsured),
+      retentionLimit: Number(values.retentionLimit),
+      lineOfBusiness: values.lineOfBusiness,
+      premium: Number(values.premium),
+    };
+
+    const { data } = await api.post(
+      `/risk-allocations/calculate-exposure/${policyNumber}`,
+      payload
+    );
+
+    setCalculatedValues(data);
+    return data;
+  } catch (e) {
+    console.error("Exposure calculation error:", e);
+    return {};
+  }
+};
+
 
   // ---------- Save Draft ----------
   const saveDraft = async () => {
@@ -113,7 +136,7 @@ export default function CreatePolicyWizard({
       setSuccessMessage(`Policy saved as DRAFT. Policy ID: ${response.id}`);
       
       // Calculate exposure after creating policy
-      await calculateExposure();
+      await calculateExposure(response.policyNumber);
       
       return response;
     } catch (e) {
@@ -129,27 +152,23 @@ export default function CreatePolicyWizard({
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      
       if (!policyId) {
         setErrorMessage('Policy ID not found. Please save as draft first.');
         return;
       }
-      
-      const payload = {
-        submittedBy: 'current-user',
-        submissionNotes: `Policy submitted for approval by underwriter`,
-      };
-      
-      const response = await policyService.submit(policyId, payload);
-      setSuccessMessage(`Policy submitted for approval. Status: ${response.status}`);
-      
+      // Call backend approve endpoint (transitions to ACTIVE, calculates exposure/retention)
+      const response = await policyService.approve(policyId);
+      setSuccessMessage(`Policy approved and activated. Status: ${response?.allocation ? 'ACTIVE' : 'DRAFT'}`);
+      if (response?.allocation) {
+        setCalculatedValues(response.allocation);
+      }
       // Redirect to policy details
       setTimeout(() => {
-        navigate(`/policies/${policyId}`, { state: { message: 'Policy submitted successfully' } });
+        navigate(`/policies/${policyId}`, { state: { message: 'Policy approved successfully' } });
       }, 2000);
     } catch (e) {
       console.error('Submit error:', e);
-      setErrorMessage(e?.response?.data?.message || 'Failed to submit policy');
+      setErrorMessage(e?.response?.data?.message || 'Failed to approve policy');
     } finally {
       setIsLoading(false);
     }

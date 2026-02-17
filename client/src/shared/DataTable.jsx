@@ -31,9 +31,14 @@ export default function DataTable({ values }) {
    */
   const userRole = (user?.role || '').toLowerCase();
 
+
+  // Approval logic: only allow if user is ADMIN or UNDERWRITER and status is DRAFT
   const canApprove = (role, status) =>
-    ['ADMIN', 'UNDERWRITER'].includes(String(role || '').toUpperCase()) &&
-    String(status || '').toUpperCase() === 'DRAFT';
+    ['admin', 'underwriter'].includes(String(role || '').toLowerCase()) &&
+    String(status || '').toLowerCase() === 'draft';
+
+  // Remove logic: only allow if user is ADMIN
+  const canRemove = (role) => String(role || '').toLowerCase() === 'admin';
 
   // Keep your date formatter
   const fmtDate = (iso) => {
@@ -86,19 +91,31 @@ export default function DataTable({ values }) {
         row?.retentionLimit != null ? Intl.NumberFormat().format(Number(row.retentionLimit)) : '—',
     },
     {
+      header: 'Retained Amount',
+      accessor: (row) =>
+        row?.retainedAmount != null ? Intl.NumberFormat().format(Number(row.retainedAmount)) : '—',
+    },
+    {
+      header: 'Ceded Amount',
+      accessor: (row) =>
+        row?.cededAmount != null ? Intl.NumberFormat().format(Number(row.cededAmount)) : '—',
+    },
+    {
       header: 'Current status',
       accessor: (row) => (
         <StatusBadge
           status={row?.status}
-          canApprove={canApprove(userRole, row?.status)}
-          onApprove={() => onApprove?.(row)}
         />
       ),
     },
 
     {
       header: 'Created By',
-      accessor: (row) => row?.createdBy?.username || '—',
+      accessor: (row) => (row?.createdBy && typeof row.createdBy === 'object' ? row.createdBy.username : row.createdBy || '—'),
+    },
+    {
+      header: 'Approved By',
+      accessor: (row) => (row?.approvedBy && typeof row.approvedBy === 'object' ? row.approvedBy.username : row.approvedBy || '—'),
     },
     {
       header: 'Actions',
@@ -110,14 +127,21 @@ export default function DataTable({ values }) {
               color="success"
               size="small"
               aria-label="Approve"
-            >Approve
+              onClick={() => row.onApprove?.(row)}
+            >
+              Approve
             </IconButton>
           )}
-          <IconButton
-            size="small"
-            aria-label="reject"
-          >Reject
-          </IconButton>
+          {canRemove(userRole) && (
+            <IconButton
+              color="error"
+              size="small"
+              aria-label="Remove"
+              onClick={() => window.confirm('Remove this policy?') && row.onRemove?.(row)}
+            >
+              Remove
+            </IconButton>
+          )}
         </Stack>
       ),
     },

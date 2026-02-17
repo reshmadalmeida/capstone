@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Paper, Typography, Grid, Stack, Chip } from '@mui/material';
 import { POLICY_STATUS } from '../../../app/constants';
 
-export default function PolicyStepReview({ values, calculatedValues = {} }) {
+import { Button, Alert, CircularProgress } from '@mui/material';
+import { policyService } from '../../../services/policyService';
+
+export default function PolicyStepReview({ values, calculatedValues = {}, policyId, onApproved }) {
+  const [isApproving, setIsApproving] = useState(false);
+  const [approveMsg, setApproveMsg] = useState(null);
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -17,8 +22,41 @@ export default function PolicyStepReview({ values, calculatedValues = {} }) {
     return new Date(date).toLocaleDateString('en-IN');
   };
 
+  // Approve handler
+  const handleApprove = async () => {
+    setIsApproving(true);
+    setApproveMsg(null);
+    try {
+      const response = await policyService.approve(policyId);
+      setApproveMsg({ type: 'success', text: 'Policy approved and exposure/retention calculated.' });
+      onApproved?.(response);
+    } catch (e) {
+      setApproveMsg({ type: 'error', text: e?.response?.data?.message || 'Approval failed' });
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
   return (
     <Stack spacing={3}>
+            {/* Approve Button and Feedback */}
+            {policyId && (
+              <Box>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleApprove}
+                  disabled={isApproving}
+                  sx={{ mb: 2 }}
+                >
+                  {isApproving ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
+                  Approve Policy
+                </Button>
+                {approveMsg && (
+                  <Alert severity={approveMsg.type} sx={{ mt: 1 }}>{approveMsg.text}</Alert>
+                )}
+              </Box>
+            )}
       {/* Header */}
       <Box>
         <Typography variant="h6" gutterBottom>Policy Summary</Typography>
@@ -110,30 +148,60 @@ export default function PolicyStepReview({ values, calculatedValues = {} }) {
         </Grid>
       </Paper>
 
-      {/* Calculated Values Preview */}
+      {/* Calculated Values Preview (Exposure/Retention) */}
       {Object.keys(calculatedValues).length > 0 && (
         <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
           <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>System Calculations</Typography>
           <Grid container spacing={2}>
-            {calculatedValues.exposure && (
+            {calculatedValues.retainedAmount !== undefined && (
               <Grid item xs={12} sm={6}>
                 <Box>
-                  <Typography variant="caption" color="textSecondary">Calculated Exposure</Typography>
-                  <Typography variant="body1">{formatCurrency(calculatedValues.exposure)}</Typography>
+                  <Typography variant="caption" color="textSecondary">Retained Amount</Typography>
+                  <Typography variant="body1">{formatCurrency(calculatedValues.retainedAmount)}</Typography>
                 </Box>
               </Grid>
             )}
-            {calculatedValues.reinsuredAmount && (
+            {calculatedValues.cededAmount !== undefined && (
               <Grid item xs={12} sm={6}>
                 <Box>
-                  <Typography variant="caption" color="textSecondary">Reinsured Amount</Typography>
-                  <Typography variant="body1">{formatCurrency(calculatedValues.reinsuredAmount)}</Typography>
+                  <Typography variant="caption" color="textSecondary">Ceded Amount</Typography>
+                  <Typography variant="body1">{formatCurrency(calculatedValues.cededAmount)}</Typography>
+                </Box>
+              </Grid>
+            )}
+            {calculatedValues.retainedPercentage !== undefined && (
+              <Grid item xs={12} sm={6}>
+                <Box>
+                  <Typography variant="caption" color="textSecondary">Retained %</Typography>
+                  <Typography variant="body1">{calculatedValues.retainedPercentage}%</Typography>
+                </Box>
+              </Grid>
+            )}
+            {calculatedValues.cededPercentage !== undefined && (
+              <Grid item xs={12} sm={6}>
+                <Box>
+                  <Typography variant="caption" color="textSecondary">Ceded %</Typography>
+                  <Typography variant="body1">{calculatedValues.cededPercentage}%</Typography>
                 </Box>
               </Grid>
             )}
           </Grid>
+          {Array.isArray(calculatedValues.allocations) && calculatedValues.allocations.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2">Allocations</Typography>
+              <ul style={{ margin: 0, paddingLeft: 20 }}>
+                {calculatedValues.allocations.map((a, idx) => (
+                  <li key={idx}>
+                    {a.reinsurer} ({a.treaty}): {formatCurrency(a.allocatedAmount)} ({a.allocatedPercentage}%)
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
         </Paper>
       )}
+      {/* Audit Log Feedback (optional) */}
+      {/* You can add a section here to show audit log entries if passed as a prop */}
     </Stack>
   );
 }

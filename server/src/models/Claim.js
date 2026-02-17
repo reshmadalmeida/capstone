@@ -12,9 +12,8 @@ const ClaimSchema = new Schema(
       uppercase: true,
     },
 
-    policyId: {
-      type: Schema.Types.ObjectId,
-      ref: "Policy",
+    policyNumber: {
+      type: String,
       required: true,
     },
 
@@ -56,6 +55,7 @@ const ClaimSchema = new Schema(
     remarks: {
       type: String,
       trim: true,
+      // optional: true,
     },
   },
   {

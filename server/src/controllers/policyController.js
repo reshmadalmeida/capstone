@@ -86,11 +86,15 @@ exports.getPolicies = async (req, res) => {
 };
 
 exports.getPolicyById = async (req, res) => {
-  try {
-    const policy = await Policy.findById(req.params.id);
+ try {
+  console.log(req.params.policyNumber,"fsdfsd")
+    const { policyNumber } = req.params;
+    const policy = await Policy.findOne(req.params.policyNumber);
     if (!policy) {
-      return res.status(404).json({ message: "Policy not found" });
+      return res.status(404).json({ message: 'Policy not found' });
     }
+    res.json(policy);
+
     res.json(policy);
   } catch (error) {
     res.status(500).json({ message: error.message });
