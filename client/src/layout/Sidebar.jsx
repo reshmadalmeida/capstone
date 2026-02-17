@@ -66,19 +66,8 @@ export default function Sidebar() {
       path: '/admin/users',
     //   icon: <PeopleIcon />,
       roles: ['admin']
-    },
-    {
-      label: 'Roles',
-      path: '/admin/roles',
-    //   icon: <RolesIcon />,
-      roles: ['admin']
-    },
-    {
-      label: 'System Config',
-      path: '/admin',
-    //   icon: <AdminIcon />,
-      roles: ['admin']
     }
+   
   ];
 
   const userRole = user.role?.toLowerCase() || '';
