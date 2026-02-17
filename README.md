@@ -7,7 +7,7 @@ Features
 4. System authenticates user and retrieves role 
 5. User is redirected to role-specific dashboard 
 6. Navigation menu is rendered based on permissions
-7. 
+  
 1. User navigates to Policy List screen 
 2. Existing policies are displayed in a table 
 3. User clicks 'Create Policy' 
