@@ -10,7 +10,7 @@ export default function TopBar() {
       <Typography variant="h6" sx={{ flexGrow: 1 }}>Insurance Portal</Typography>
       {user && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body2">{user.name}  •{ROLE_NAMES[userRole]}</Typography>
+          <Typography variant="body2">{user.name} </Typography>
           <Button color="secondary" onClick={logout}>Logout</Button>
         </Box>
       )}
