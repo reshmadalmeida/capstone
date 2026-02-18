@@ -39,7 +39,7 @@ const PolicySchema = new Schema(
     premium: {
       type: Number,
       required: true,
-      min: 0,
+      min: 10000,
     },
 
     retentionLimit: {

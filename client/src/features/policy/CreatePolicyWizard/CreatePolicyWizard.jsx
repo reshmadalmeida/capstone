@@ -58,8 +58,8 @@ export default function CreatePolicyWizard({
     const retentionLimit = Number(values.retentionLimit ?? 0);
 
     if (sumInsured <= 0) { setError('sumInsured', 'Must be > 0'); ok = false; }
-    if (premium < 0) { setError('premium', 'Cannot be negative'); ok = false; }
-    if (retentionLimit < 0) { setError('retentionLimit', 'Cannot be negative'); ok = false; }
+    if (premium < 75000) { setError('premium', 'Cannot be negative or less than min of 75000'); ok = false; }
+    if (retentionLimit < 50000) { setError('retentionLimit', 'Cannot be negative or less than min of 50000'); ok = false; }
     if (retentionLimit > sumInsured) { setError('retentionLimit', 'Cannot exceed Sum Insured'); ok = false; }
     return ok;
   };

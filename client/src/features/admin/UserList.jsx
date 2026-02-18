@@ -50,7 +50,7 @@ export default function UserList() {
     username: '',
     email: '',
     password: '',
-    role: 'CLAIMS_ADJUSTER',
+    role: 'UNDERWRITER',
   });
   const [formErrors, setFormErrors] = useState({});
 
@@ -98,7 +98,7 @@ export default function UserList() {
         username: '',
         email: '',
         password: '',
-        role: 'claims_adjuster',
+        role: 'UNDERWRITER',
       });
     }
     setFormErrors({});
@@ -108,7 +108,7 @@ export default function UserList() {
   const handleCloseForm = () => {
     setOpenForm(false);
     setSelectedUser(null);
-    setFormData({ username: '', email: '', password: '', role: 'CLAIMS_ADJUSTER' });
+    setFormData({ username: '', email: '', password: '', role: 'UNDERWRITER' });
     setFormErrors({});
   };
 
