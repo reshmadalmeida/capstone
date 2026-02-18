@@ -131,7 +131,7 @@ export default function UserList() {
 
       if (selectedUser) {
         // Update existing user
-        await userService.update(selectedUser.id, payload);
+        await userService.update(selectedUser._id, payload);
         setSuccess('User updated successfully');
       } else {
         // Create new user
@@ -158,7 +158,8 @@ export default function UserList() {
     try {
       setLoading(true);
       setError('');
-      await userService.delete(selectedUser.id);
+      // console.log("Deleting user id:", selectedUser?._id, selectedUser?.id);
+      await userService.delete(selectedUser._id);
       setSuccess('User deleted successfully');
       setOpenDeleteConfirm(false);
       setSelectedUser(null);
